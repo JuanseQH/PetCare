@@ -450,3 +450,158 @@ fun PillTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modi
         }
     }
 }
+
+// ================================================================= Gráficos
+
+/** Anillo de progreso animado (0..1) con contenido al centro. */
+@Composable
+fun ProgressRing(
+    progress: Float,
+    size: Dp,
+    stroke: Dp = 10.dp,
+    color: Color = MaterialTheme.colorScheme.primary,
+    track: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    content: @Composable BoxScope.() -> Unit = {},
+) {
+    val animated by animateFloatAsState(progress.coerceIn(0f, 1f), tween(900), label = "ring")
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val s = stroke.toPx()
+            val arc = Size(this.size.width - s, this.size.height - s)
+            drawArc(track, 0f, 360f, false, Offset(s / 2, s / 2), arc, style = Stroke(s))
+            drawArc(color, -90f, 360f * animated, false, Offset(s / 2, s / 2), arc, style = Stroke(s, cap = StrokeCap.Round))
+        }
+        content()
+    }
+}
+
+/** Gráfica de línea del peso con área degradada, puntos y etiquetas. */
+@Composable
+fun WeightChart(entries: List<WeightEntry>, color: Color, modifier: Modifier = Modifier) {
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val surface = MaterialTheme.colorScheme.surfaceContainerLowest
+    val progress by animateFloatAsState(1f, tween(800), label = "chart")
+    Column(modifier) {
+        Canvas(Modifier.fillMaxWidth().height(170.dp)) {
+            if (entries.isEmpty()) return@Canvas
+            val min = entries.minOf { it.weightKg }
+            val max = entries.maxOf { it.weightKg }
+            val range = (max - min).takeIf { it > 0 } ?: (max.coerceAtLeast(0.1) * 0.2)
+            val top = 14.dp.toPx(); val bottom = size.height - 10.dp.toPx()
+            val left = 6.dp.toPx(); val right = size.width - 6.dp.toPx()
+            fun x(i: Int) = if (entries.size == 1) size.width / 2 else left + (right - left) * i / (entries.size - 1)
+            fun y(v: Double) = (bottom - (bottom - top) * ((v - min + range * 0.1) / (range * 1.2))).toFloat()
+
+            // Líneas guía
+            repeat(3) { k ->
+                val gy = top + (bottom - top) * k / 2
+                drawLine(grid, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 1.dp.toPx())
+            }
+            val pts = entries.mapIndexed { i, e -> Offset(x(i), y(e.weightKg) + (bottom - y(e.weightKg)) * (1 - progress)) }
+            val line = Path().apply {
+                moveTo(pts[0].x, pts[0].y)
+                for (i in 1 until pts.size) {
+                    val p0 = pts[i - 1]; val p1 = pts[i]
+                    val mx = (p0.x + p1.x) / 2
+                    cubicTo(mx, p0.y, mx, p1.y, p1.x, p1.y)
+                }
+            }
+            val area = Path().apply {
+                addPath(line); lineTo(pts.last().x, bottom); lineTo(pts.first().x, bottom); close()
+            }
+            drawPath(area, Brush.verticalGradient(listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0f)), top, bottom))
+            drawPath(line, color, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+            pts.forEachIndexed { i, p ->
+                val last = i == pts.lastIndex
+                drawCircle(surface, if (last) 7.dp.toPx() else 5.dp.toPx(), p)
+                drawCircle(color, if (last) 5.dp.toPx() else 3.5.dp.toPx(), p)
+            }
+        }
+        if (entries.size > 1) {
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                Text(formatShort(entries.first().date), style = MaterialTheme.typography.labelSmall, color = labelColor)
+                Spacer(Modifier.weight(1f))
+                Text(formatShort(entries.last().date), style = MaterialTheme.typography.labelSmall, color = labelColor)
+            }
+        }
+    }
+}
+
+/** Pequeña "píldora" informativa (ej. "3 años", "Hembra"). */
+@Composable
+fun InfoPill(text: String, container: Color, content: Color, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = content,
+        modifier = modifier.clip(RoundedCornerShape(50)).background(container).padding(horizontal = 12.dp, vertical = 6.dp),
+    )
+}
+
+/** Indicador del cambio de peso, ej. "+1,2 kg". */
+fun weightDelta(entries: List<WeightEntry>): String? {
+    if (entries.size < 2) return null
+    val d = entries.last().weightKg - entries.first().weightKg
+    val sign = if (d >= 0) "+" else "−"
+    return sign + formatKg(kotlin.math.abs(d)).let { if (kotlin.math.abs(d) < 0.0005) "0 g" else it }
+}
+
+/** Botón redondo grande de acción rápida con etiqueta debajo. */
+@Composable
+fun QuickAction(icon: ImageVector, label: String, container: Color, content: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(56.dp).clip(RoundedCornerShape(20.dp)).background(container), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = content, modifier = Modifier.size(26.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+    }
+}
+
+/** Borde punteado-circular para el botón "Agregar" en el carrusel de mascotas. */
+@Composable
+fun DashedCircle(size: Dp, color: Color, content: @Composable BoxScope.() -> Unit) {
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawCircle(
+                color, style = Stroke(2.dp.toPx(), pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f))),
+                radius = this.size.minDimension / 2 - 2.dp.toPx(),
+            )
+        }
+        content()
+    }
+}
+
+/**
+ * Ajusta el color de los íconos de la barra de estado según el fondo de la pantalla:
+ * [darkIcons] = true para fondos claros.
+ */
+@Composable
+fun StatusBarIcons(darkIcons: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (!view.isInEditMode) {
+        androidx.compose.runtime.DisposableEffect(darkIcons) {
+            val window = (view.context as android.app.Activity).window
+            androidx.core.view.WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkIcons
+            onDispose {}
+        }
+    }
+}
+
+/** Franja del color de fondo bajo la barra de estado, para que el contenido no se mezcle con el reloj al desplazarse. */
+@Composable
+fun StatusBarScrim(visible: Boolean = true, modifier: Modifier = Modifier) {
+    val alpha by animateFloatAsState(if (visible) 1f else 0f, tween(200), label = "scrim")
+    Box(
+        modifier.fillMaxWidth()
+            .windowInsetsTopHeight(androidx.compose.foundation.layout.WindowInsets.statusBars)
+            .graphicsLayer { this.alpha = alpha }
+            .background(MaterialTheme.colorScheme.background)
+    )
+}
+
+/** Íconos oscuros solo si la pantalla tiene fondo claro y el tema es claro. */
+@Composable
+fun StatusBarForLightScreen() = StatusBarIcons(darkIcons = !LocalAppExtras.current.dark)
