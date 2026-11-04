@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upb.petcare.data.ThemeMode
@@ -15,6 +16,7 @@ import com.upb.petcare.ui.theme.PetCareTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as PetCareApp).container
@@ -25,15 +27,12 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            // Íconos de la barra de estado legibles según el tema elegido en la app
-            SideEffect {
-                WindowCompat.getInsetsController(window, window.decorView).apply {
-                    isAppearanceLightStatusBars = !dark
-                    isAppearanceLightNavigationBars = !dark
-                }
-            }
             PetCareTheme(darkTheme = dark) {
-                PetCareNavHost(container.settings)
+                // Los íconos de la barra de estado se ajustan a cada pantalla (ver StatusBarStyle)
+                SideEffect {
+                    WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = !dark
+                }
+                PetCareNavHost(container.settings, dark)
             }
         }
     }
