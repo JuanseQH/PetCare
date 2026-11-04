@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- almohadilla principal -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,52c-8.5,0 -16,9.5 -16,16.5c0,5 4,7.5 8.5,7.5c3.2,0 5,-1.6 7.5,-1.6s4.3,1.6 7.5,1.6c4.5,0 8.5,-2.5 8.5,-7.5C70,61.5 62.5,52 54,52z" />
+    <!-- dedos -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M44.5,47.5m-5,0a5,6.2 0,1 1,10 0a5,6.2 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M63.5,47.5m-5,0a5,6.2 0,1 1,10 0a5,6.2 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M35,58m-4.5,0a4.5,5.5 0,1 1,9 0a4.5,5.5 0,1 1,-9 0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M73,58m-4.5,0a4.5,5.5 0,1 1,9 0a4.5,5.5 0,1 1,-9 0" />
+    <!-- cruz médica -->
+    <path android:fillColor="#FDBA74"
+        android:pathData="M51.5,30h5v5h5v5h-5v5h-5v-5h-5v-5h5z" />
+</vector>
