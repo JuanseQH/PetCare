@@ -194,3 +194,130 @@ fun PetFormScreen(
         }
     }
 }
+
+// ---------------------------------------------------------------- Formulario vacuna
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun VaccineFormScreen(
+    petId: Long,
+    vaccineId: Long,
+    onBack: () -> Unit,
+    vm: PetViewModel = viewModel(factory = AppViewModelProvider.Factory),
+) {
+    val isEdit = vaccineId != 0L
+    val pet by remember(petId) { vm.pet(petId) }.collectAsStateWithLifecycle(null)
+    var loaded by rememberSaveable { mutableStateOf(!isEdit) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var applied by rememberSaveable { mutableStateOf<Long?>(today()) }
+    var next by rememberSaveable { mutableStateOf<Long?>(null) }
+    var vet by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var submitted by rememberSaveable { mutableStateOf(false) }
+    var saving by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(vaccineId) {
+        if (isEdit && !loaded) {
+            vm.getVaccine(vaccineId)?.let { v ->
+                name = v.name; applied = v.appliedDate; next = v.nextDoseDate; vet = v.veterinarian; notes = v.notes
+            }
+            loaded = true
+        }
+    }
+
+    val nameError = submitted && name.isBlank()
+    val appliedError = submitted && applied == null || (applied != null && applied!! > today())
+    val nextError = next != null && applied != null && next!! <= applied!!
+
+    fun save() {
+        submitted = true
+        if (name.isBlank() || applied == null || applied!! > today() || nextError) return
+        saving = true
+        vm.saveVaccine(
+            Vaccine(
+                id = vaccineId, petId = petId, name = name.trim(), appliedDate = applied!!,
+                nextDoseDate = next, veterinarian = vet.trim(), notes = notes.trim(),
+            ),
+            onBack,
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            PetTopBar(
+                (if (isEdit) "Editar vacuna" else "Registrar vacuna") + (pet?.let { " · ${it.name}" } ?: ""),
+                onBack = onBack,
+            )
+        }
+    ) { padding ->
+        if (!loaded) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            return@Scaffold
+        }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            OutlinedTextField(
+                value = name, onValueChange = { name = it },
+                label = { Text("Vacuna o tratamiento *") },
+                leadingIcon = { Icon(Icons.Default.Vaccines, null) },
+                isError = nameError,
+                supportingText = if (nameError) { { Text("Escribe el nombre o elige una sugerencia") } } else null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                VACCINE_SUGGESTIONS.forEach { s -> SuggestionChip(onClick = { name = s }, label = { Text(s) }) }
+            }
+            DateField(
+                label = "Fecha de aplicación *",
+                value = applied,
+                onValueChange = { applied = it },
+                isError = appliedError,
+                supportingText = if (appliedError) "Elige una fecha que no sea futura" else null,
+            )
+            DateField(
+                label = "Próxima dosis / refuerzo",
+                value = next,
+                onValueChange = { next = it },
+                clearable = true,
+                isError = nextError,
+                supportingText = if (nextError) "Debe ser posterior a la aplicación" else "Opcional: genera alertas en el menú",
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("+1 mes" to 1L, "+6 meses" to 6L, "+1 año" to 12L).forEach { (label, months) ->
+                    SuggestionChip(
+                        onClick = {
+                            applied?.let { next = java.time.LocalDate.ofEpochDay(it).plusMonths(months).toEpochDay() }
+                        },
+                        label = { Text(label) },
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = vet, onValueChange = { vet = it },
+                label = { Text("Veterinario / clínica") },
+                leadingIcon = { Icon(Icons.Default.MedicalServices, null) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = notes, onValueChange = { notes = it },
+                label = { Text("Observaciones") },
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(onClick = { save() }, enabled = !saving, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Text(if (isEdit) "Guardar cambios" else "Guardar vacuna")
+            }
+        }
+    }
+}
