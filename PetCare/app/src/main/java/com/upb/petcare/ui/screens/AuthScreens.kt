@@ -247,12 +247,15 @@ fun LoginScreen(
     }
 }
 
+// ================================================================= Registro
+
 @Composable
 fun RegisterScreen(
     onRegistered: () -> Unit,
     onBack: () -> Unit,
     vm: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
+    StatusBarIcons(darkIcons = false)
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -268,6 +271,9 @@ fun RegisterScreen(
     val passwordError = submitted && password.length < 6
     val confirmError = submitted && confirm != password
 
+    // Indicador de seguridad de la contraseña
+    val strength = listOf(password.length >= 6, password.length >= 10, password.any { it.isDigit() } && password.any { it.isLetter() }).count { it }
+
     fun submit() {
         submitted = true
         if (name.trim().length < 3 || !isValidEmail(email) || password.length < 6 || confirm != password) return
@@ -281,83 +287,65 @@ fun RegisterScreen(
         }
     }
 
-    Scaffold(
-        topBar = { PetTopBar("Crear cuenta", onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                "Registra tus datos para empezar a llevar el control de vacunas de tus mascotas.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedTextField(
-                value = name, onValueChange = { name = it },
-                label = { Text("Nombre completo") },
-                leadingIcon = { Icon(Icons.Default.Person, null) },
-                isError = nameError,
-                supportingText = if (nameError) { { Text("Mínimo 3 caracteres") } } else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = email, onValueChange = { email = it },
-                label = { Text("Correo electrónico") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
-                isError = emailError,
-                supportingText = if (emailError) { { Text("Ingresa un correo válido") } } else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = password, onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                leadingIcon = { Icon(Icons.Default.Lock, null) },
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Mostrar u ocultar")
-                    }
-                },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = passwordError,
-                supportingText = { Text(if (passwordError) "Debe tener al menos 6 caracteres" else "Mínimo 6 caracteres") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = confirm, onValueChange = { confirm = it },
-                label = { Text("Confirmar contraseña") },
-                leadingIcon = { Icon(Icons.Default.Lock, null) },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = confirmError,
-                supportingText = if (confirmError) { { Text("Las contraseñas no coinciden") } } else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { submit() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Button(
-                onClick = { submit() },
-                enabled = !loading,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                else Text("Crear cuenta")
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0)) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).imePadding()) {
+            Box {
+                AuthHeader("Crear cuenta", "Únete a la familia PetCare", compact = true)
+                IconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(8.dp)) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Volver", tint = Color.White, modifier = Modifier.size(26.dp))
+                }
             }
-            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            SoftCard(Modifier.padding(horizontal = 20.dp).offset(y = (-48).dp), radius = 32.dp, elevation = 8.dp) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PetTextField(
+                        value = name, onValueChange = { name = it }, label = "Nombre completo", leadingIcon = Icons.Rounded.Person,
+                        isError = nameError, supportingText = if (nameError) "Mínimo 3 caracteres" else null,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
+                    )
+                    PetTextField(
+                        value = email, onValueChange = { email = it }, label = "Correo electrónico", leadingIcon = Icons.Rounded.Email,
+                        isError = emailError, supportingText = if (emailError) "Ingresa un correo válido" else null,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                    )
+                    PetTextField(
+                        value = password, onValueChange = { password = it }, label = "Contraseña", leadingIcon = Icons.Rounded.Lock,
+                        trailing = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(if (showPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, "Mostrar u ocultar")
+                            }
+                        },
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = passwordError, supportingText = if (passwordError) "Debe tener al menos 6 caracteres" else null,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                    )
+                    if (password.isNotEmpty()) {
+                        val labels = listOf("Débil", "Aceptable", "Buena", "Fuerte")
+                        val colors = listOf(MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.tertiary,
+                            MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            repeat(3) { i ->
+                                Box(Modifier.weight(1f).padding(end = 6.dp).height(6.dp).clip(CircleShape)
+                                    .background(if (i < strength) colors[strength] else MaterialTheme.colorScheme.surfaceContainerHigh))
+                            }
+                            Text(labels[strength], style = MaterialTheme.typography.labelMedium, color = colors[strength],
+                                modifier = Modifier.padding(start = 6.dp))
+                        }
+                    }
+                    PetTextField(
+                        value = confirm, onValueChange = { confirm = it }, label = "Confirmar contraseña", leadingIcon = Icons.Rounded.Lock,
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = confirmError, supportingText = if (confirmError) "Las contraseñas no coinciden" else null,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { submit() }),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    PrimaryButton("Crear cuenta", { submit() }, Modifier.fillMaxWidth(), loading = loading)
+                }
+            }
+            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterHorizontally).offset(y = (-32).dp)) {
                 Text("Ya tengo cuenta, iniciar sesión")
             }
         }
     }
 }
+
