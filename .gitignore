@@ -1,0 +1,10 @@
+# Archivos del sistema y del IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+
+# Firma de la app (nunca subir al repositorio)
+*.jks
+*.keystore
+keystore.properties
