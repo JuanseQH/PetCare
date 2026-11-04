@@ -202,3 +202,78 @@ private fun SettingItem(
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
     )
 }
+
+// ---------------------------------------------------------------- Créditos
+
+/**
+ * >>> EDITA AQUÍ LOS DATOS DEL ESTUDIANTE <<<
+ * Esta información aparece en la pantalla de Créditos.
+ */
+object StudentInfo {
+    const val NAME = "Juan Sebastián Quintero Hernández"
+    const val STUDENT_ID = "ID: 000492758"
+    const val EMAIL = "setiquintero@gmail.com"
+    const val PROGRAM = "Ingeniería de Sistemas e Informática"
+    const val COURSE = "Aplicaciones Móviles"
+    const val UNIVERSITY = "Universidad Pontificia Bolivariana"
+    const val DELIVERY = "Entrega 3 · App nativa (Kotlin)"
+    const val YEAR = "2026"
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun CreditsScreen(onBack: () -> Unit) {
+    Scaffold(topBar = { PetTopBar("Créditos", onBack = onBack) }) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(Icons.Default.Pets, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
+            Text("PetCare", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                "Aplicación nativa para llevar el control de vacunación y desparasitación de tus mascotas, " +
+                    "con alertas de próximas dosis.",
+                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.School, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Desarrollado por", style = MaterialTheme.typography.titleMedium)
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+                    Text(StudentInfo.NAME, style = MaterialTheme.typography.titleLarge)
+                    Text(StudentInfo.STUDENT_ID, style = MaterialTheme.typography.bodyMedium)
+                    Text(StudentInfo.EMAIL, style = MaterialTheme.typography.bodyMedium)
+                    Text(StudentInfo.PROGRAM, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text("${StudentInfo.COURSE} · ${StudentInfo.UNIVERSITY}", style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium)
+                    Text("${StudentInfo.DELIVERY} · ${StudentInfo.YEAR}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Code, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Tecnologías", style = MaterialTheme.typography.titleMedium)
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Kotlin", "Jetpack Compose", "Material 3", "Room (SQLite)", "DataStore",
+                            "Navigation Compose", "ViewModel + Flow", "Android Studio").forEach {
+                            AssistChip(onClick = {}, label = { Text(it) })
+                        }
+                    }
+                }
+            }
+            Text("Íconos: Material Symbols (Google) · Emojis del sistema", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
