@@ -186,3 +186,118 @@ fun LoginScreen(
         }
     }
 }
+
+@Composable
+fun RegisterScreen(
+    onRegistered: () -> Unit,
+    onBack: () -> Unit,
+    vm: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory),
+) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var confirm by rememberSaveable { mutableStateOf("") }
+    var showPassword by rememberSaveable { mutableStateOf(false) }
+    var submitted by rememberSaveable { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val nameError = submitted && name.trim().length < 3
+    val emailError = submitted && !isValidEmail(email)
+    val passwordError = submitted && password.length < 6
+    val confirmError = submitted && confirm != password
+
+    fun submit() {
+        submitted = true
+        if (name.trim().length < 3 || !isValidEmail(email) || password.length < 6 || confirm != password) return
+        loading = true
+        vm.register(name, email, password) { result ->
+            loading = false
+            when (result) {
+                is AuthResult.Success -> onRegistered()
+                is AuthResult.Error -> scope.launch { snackbar.showSnackbar(result.message) }
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = { PetTopBar("Crear cuenta", onBack = onBack) },
+        snackbarHost = { SnackbarHost(snackbar) },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "Registra tus datos para empezar a llevar el control de vacunas de tus mascotas.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = name, onValueChange = { name = it },
+                label = { Text("Nombre completo") },
+                leadingIcon = { Icon(Icons.Default.Person, null) },
+                isError = nameError,
+                supportingText = if (nameError) { { Text("Mínimo 3 caracteres") } } else null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = email, onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                leadingIcon = { Icon(Icons.Default.Email, null) },
+                isError = emailError,
+                supportingText = if (emailError) { { Text("Ingresa un correo válido") } } else null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = password, onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Mostrar u ocultar")
+                    }
+                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                isError = passwordError,
+                supportingText = { Text(if (passwordError) "Debe tener al menos 6 caracteres" else "Mínimo 6 caracteres") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = confirm, onValueChange = { confirm = it },
+                label = { Text("Confirmar contraseña") },
+                leadingIcon = { Icon(Icons.Default.Lock, null) },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                isError = confirmError,
+                supportingText = if (confirmError) { { Text("Las contraseñas no coinciden") } } else null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = { submit() },
+                enabled = !loading,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                else Text("Crear cuenta")
+            }
+            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("Ya tengo cuenta, iniciar sesión")
+            }
+        }
+    }
+}
