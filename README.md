@@ -6,29 +6,6 @@ Aplicación **nativa Android** desarrollada en **Kotlin + Jetpack Compose** con 
 
 PetCare permite registrar mascotas, llevar su carné de vacunación y recibir alertas en el menú cuando una vacuna está **vencida** o **próxima** a vencer.
 
----
-
-## ✅ Requisitos de la entrega
-
-| Requisito | Dónde está |
-|---|---|
-| Wireframe manual (papel) | `wireframes/papel/` (sube aquí las fotos de tus bocetos) |
-| Wireframe digital (Figma) | `wireframes/digital/` (SVG editables, se importan a Figma) |
-| Login | `ui/screens/AuthScreens.kt` → `LoginScreen` |
-| Registro | `ui/screens/AuthScreens.kt` → `RegisterScreen` |
-| Menú | `ui/screens/HomeScreen.kt` + barra de navegación inferior (`ui/navigation/NavGraph.kt`) |
-| Listado | `ui/screens/PetScreens.kt` → `PetListScreen` |
-| Detalle | `ui/screens/PetScreens.kt` → `PetDetailScreen` |
-| Formulario | `ui/screens/FormScreens.kt` → mascota y vacuna |
-| Configuración | `ui/screens/SettingsScreens.kt` → `SettingsScreen` |
-| Créditos (info del estudiante) | `ui/screens/SettingsScreens.kt` → `StudentInfo` / `CreditsScreen` |
-| Montaje en Android Studio | Proyecto `PetCare/` (Gradle Kotlin DSL) |
-| Funcionalidades | CRUD completo, alertas, recordatorios, calendario, fotos, peso y PDF |
-
-Capturas reales de la app en el emulador: `capturas/v2/` (versión actual) y `capturas/v1/` (versión inicial).
-
----
-
 ## ✨ Funcionalidades
 
 **Identidad visual propia:** paleta jade + coral + girasol sobre fondo cálido, tipografías **Fredoka** (títulos) y **Nunito** (texto), patrón de huellas, tarjetas redondeadas, barra de navegación flotante, animaciones y modo oscuro completo.
