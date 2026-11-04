@@ -1,5 +1,6 @@
 package com.upb.petcare.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -37,6 +38,10 @@ data class Pet(
     val birthDate: Long? = null,
     val weightKg: Double? = null,
     val notes: String = "",
+    /** Ruta de la foto guardada en el almacenamiento interno de la app (opcional). */
+    val photoPath: String? = null,
+    /** Índice del color que identifica a la mascota en la paleta de la app. */
+    @ColumnInfo(defaultValue = "0") val colorIndex: Int = 0,
 )
 
 /** Registro de una vacuna (o desparasitación) aplicada a una mascota. */
@@ -60,9 +65,29 @@ data class Vaccine(
     val notes: String = "",
 )
 
-/** Vacuna junto con el nombre y especie de su mascota (para el menú principal). */
+/** Medición de peso de una mascota (para la gráfica de evolución). */
+@Entity(
+    tableName = "weights",
+    foreignKeys = [ForeignKey(
+        entity = Pet::class,
+        parentColumns = ["id"],
+        childColumns = ["petId"],
+        onDelete = ForeignKey.CASCADE,
+    )],
+    indices = [Index("petId")],
+)
+data class WeightEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val petId: Long,
+    val date: Long,
+    val weightKg: Double,
+)
+
+/** Vacuna junto con los datos básicos de su mascota (para el inicio y el calendario). */
 data class VaccineWithPet(
     @Embedded val vaccine: Vaccine,
     val petName: String,
     val petSpecies: String,
+    val petPhoto: String?,
+    val petColor: Int,
 )
