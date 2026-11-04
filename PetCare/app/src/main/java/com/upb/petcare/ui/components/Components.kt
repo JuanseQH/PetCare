@@ -289,3 +289,164 @@ fun EmptyState(emoji: String, title: String, message: String, modifier: Modifier
         if (action != null) { Spacer(Modifier.height(20.dp)); action() }
     }
 }
+
+// ================================================================= Botones y campos
+
+@Composable
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    loading: Boolean = false,
+    enabled: Boolean = true,
+    container: Color = MaterialTheme.colorScheme.primary,
+    content: Color = MaterialTheme.colorScheme.onPrimary,
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        shape = RoundedCornerShape(50),
+        colors = ButtonDefaults.buttonColors(containerColor = container, contentColor = content),
+        modifier = modifier.height(56.dp),
+    ) {
+        if (loading) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp, color = content)
+        else {
+            if (icon != null) { Icon(icon, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }
+            Text(text, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+fun TonalButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
+    FilledTonalButton(onClick = onClick, shape = RoundedCornerShape(50), modifier = modifier.height(48.dp)) {
+        if (icon != null) { Icon(icon, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)) }
+        Text(text, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+/** Campo de texto con el estilo de la app (relleno blanco y esquinas redondeadas). */
+@Composable
+fun PetTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    readOnly: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    interactionSource: MutableInteractionSource? = null,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        leadingIcon = leadingIcon?.let { { Icon(it, null) } },
+        trailingIcon = trailing,
+        isError = isError,
+        supportingText = supportingText?.let { { Text(it) } },
+        singleLine = singleLine,
+        minLines = minLines,
+        readOnly = readOnly,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        visualTransformation = visualTransformation,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(18.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            errorContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** Campo de fecha de solo lectura que abre un calendario al tocarlo. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateField(
+    label: String,
+    value: Long?,
+    onValueChange: (Long?) -> Unit,
+    modifier: Modifier = Modifier,
+    clearable: Boolean = false,
+    isError: Boolean = false,
+    supportingText: String? = null,
+) {
+    var show by remember { mutableStateOf(false) }
+    val interaction = remember { MutableInteractionSource() }
+    LaunchedEffect(interaction) {
+        interaction.interactions.collect { if (it is PressInteraction.Release) show = true }
+    }
+    PetTextField(
+        value = if (value == null) "" else formatDate(value),
+        onValueChange = {},
+        readOnly = true,
+        label = label,
+        leadingIcon = Icons.Rounded.CalendarMonth,
+        trailing = if (clearable && value != null) {
+            { IconButton(onClick = { onValueChange(null) }) { Icon(Icons.Rounded.Clear, contentDescription = "Quitar fecha") } }
+        } else null,
+        isError = isError,
+        supportingText = supportingText,
+        interactionSource = interaction,
+        modifier = modifier,
+    )
+    if (show) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = value?.let(::epochDayToMillis))
+        DatePickerDialog(
+            onDismissRequest = { show = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { onValueChange(millisToEpochDay(it)) }
+                    show = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = { TextButton(onClick = { show = false }) { Text("Cancelar") } },
+        ) { DatePicker(state = state) }
+    }
+}
+
+/** Control segmentado en forma de píldora (pestañas). */
+@Composable
+fun PillTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(4.dp),
+    ) {
+        options.forEachIndexed { i, label ->
+            val on = i == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (on) MaterialTheme.colorScheme.surfaceContainerLowest else Color.Transparent)
+                    .clickable { onSelect(i) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (on) FontWeight.ExtraBold else FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
