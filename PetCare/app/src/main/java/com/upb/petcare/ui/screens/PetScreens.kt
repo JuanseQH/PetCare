@@ -175,3 +175,187 @@ private fun PetRow(pet: Pet, pending: Int, onClick: () -> Unit) {
         }
     }
 }
+
+// ---------------------------------------------------------------- Detalle
+
+@Composable
+fun PetDetailScreen(
+    petId: Long,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    onAddVaccine: () -> Unit,
+    onEditVaccine: (Long) -> Unit,
+    vm: PetViewModel = viewModel(factory = AppViewModelProvider.Factory),
+) {
+    val pet by remember(petId) { vm.pet(petId) }.collectAsStateWithLifecycle(null)
+    val vaccines by remember(petId) { vm.vaccinesForPet(petId) }.collectAsStateWithLifecycle(emptyList())
+    val alertDays by vm.alertDays.collectAsStateWithLifecycle()
+    var confirmDeletePet by rememberSaveable { mutableStateOf(false) }
+    var vaccineToDelete by remember { mutableStateOf<Vaccine?>(null) }
+
+    Scaffold(
+        topBar = {
+            PetTopBar(pet?.name ?: "Detalle", onBack = onBack) {
+                IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, contentDescription = "Editar mascota") }
+                IconButton(onClick = { confirmDeletePet = true }) { Icon(Icons.Default.Delete, contentDescription = "Eliminar mascota") }
+            }
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = onAddVaccine, icon = { Icon(Icons.Default.Vaccines, null) },
+                text = { Text("Registrar vacuna") })
+        },
+    ) { padding ->
+        val p = pet
+        if (p == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            return@Scaffold
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { PetHeader(p) }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SectionTitle("Carné de vacunación")
+                    Spacer(Modifier.weight(1f))
+                    Text("${vaccines.size} ${if (vaccines.size == 1) "registro" else "registros"}", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (vaccines.isEmpty()) {
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                        Text(
+                            "Todavía no hay vacunas registradas para ${p.name}. Toca \"Registrar vacuna\" para agregar la primera.",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            } else {
+                // Solo la aplicación más reciente de cada vacuna genera alerta
+                val latestIds = vaccines.groupBy { it.name.trim().lowercase() }
+                    .map { (_, l) -> l.maxBy { it.appliedDate }.id }.toSet()
+                items(vaccines, key = { it.id }) { v ->
+                    VaccineRow(
+                        vaccine = v,
+                        status = if (v.id in latestIds) vaccineStatus(v.nextDoseDate, alertDays) else VaccineStatus.DONE,
+                        superseded = v.id !in latestIds,
+                        onClick = { onEditVaccine(v.id) },
+                        onDelete = { vaccineToDelete = v },
+                    )
+                }
+            }
+        }
+    }
+
+    if (confirmDeletePet && pet != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDeletePet = false },
+            title = { Text("Eliminar a ${pet!!.name}") },
+            text = { Text("Se borrará la mascota y todo su historial de vacunas. Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = { confirmDeletePet = false; vm.deletePet(pet!!, onBack) }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDeletePet = false }) { Text("Cancelar") } },
+        )
+    }
+    vaccineToDelete?.let { v ->
+        AlertDialog(
+            onDismissRequest = { vaccineToDelete = null },
+            title = { Text("Eliminar registro") },
+            text = { Text("¿Eliminar la vacuna \"${v.name}\" del ${formatDate(v.appliedDate)}?") },
+            confirmButton = {
+                TextButton(onClick = { vm.deleteVaccine(v); vaccineToDelete = null }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { vaccineToDelete = null }) { Text("Cancelar") } },
+        )
+    }
+}
+
+@Composable
+private fun PetHeader(pet: Pet) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PetAvatar(pet.species, 72.dp)
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(pet.name, style = MaterialTheme.typography.headlineSmall)
+                    Text(listOf(pet.species, pet.breed).filter { it.isNotBlank() }.joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth()) {
+                InfoItem("Edad", ageText(pet.birthDate), Modifier.weight(1f))
+                InfoItem("Sexo", pet.sex.ifBlank { "—" }, Modifier.weight(1f))
+                InfoItem("Peso", pet.weightKg?.let { "${"%.1f".format(it).removeSuffix(",0").removeSuffix(".0")} kg" } ?: "—", Modifier.weight(1f))
+            }
+            if (pet.birthDate != null) {
+                Spacer(Modifier.height(8.dp))
+                InfoItem("Nacimiento", formatDate(pet.birthDate))
+            }
+            if (pet.notes.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                InfoItem("Notas", pet.notes)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(label, style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun VaccineRow(
+    vaccine: Vaccine,
+    status: VaccineStatus,
+    superseded: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Row(Modifier.padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(vaccine.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                    Spacer(Modifier.width(8.dp))
+                    if (!superseded) StatusChip(status)
+                }
+                Text("Aplicada: ${formatDate(vaccine.appliedDate)}", style = MaterialTheme.typography.bodyMedium)
+                vaccine.nextDoseDate?.let {
+                    Text(
+                        if (superseded) "Refuerzo: ${formatDate(it)} (ya renovada)"
+                        else "Refuerzo: ${formatDate(it)} · ${relativeDays(it)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (vaccine.veterinarian.isNotBlank()) {
+                    Text("Veterinario: ${vaccine.veterinarian}", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Eliminar vacuna") }
+        }
+    }
+}
