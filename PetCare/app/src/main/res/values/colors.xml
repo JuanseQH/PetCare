@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_teal">#0F766E</color>
-    <color name="brand_background">#F4FBF9</color>
-    <color name="ic_launcher_background">#0F766E</color>
+    <color name="brand_jade">#1E6B5C</color>
+    <color name="brand_background">#FAF6F1</color>
+    <color name="brand_background_dark">#0F1513</color>
+    <color name="ic_launcher_background">#1E6B5C</color>
 </resources>
