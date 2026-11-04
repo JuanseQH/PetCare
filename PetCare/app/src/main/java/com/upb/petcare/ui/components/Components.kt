@@ -106,3 +106,72 @@ fun StatusChip(status: VaccineStatus) {
         )
     }
 }
+
+@Composable
+fun EmptyState(icon: ImageVector, title: String, message: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(16.dp))
+        Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Campo de fecha de solo lectura que abre un DatePicker al tocarlo. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateField(
+    label: String,
+    value: Long?,
+    onValueChange: (Long?) -> Unit,
+    modifier: Modifier = Modifier,
+    clearable: Boolean = false,
+    isError: Boolean = false,
+    supportingText: String? = null,
+) {
+    var show by remember { mutableStateOf(false) }
+    val interaction = remember { MutableInteractionSource() }
+    LaunchedEffect(interaction) {
+        interaction.interactions.collect { if (it is PressInteraction.Release) show = true }
+    }
+    OutlinedTextField(
+        value = if (value == null) "" else formatDate(value),
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(label) },
+        leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+        trailingIcon = {
+            if (clearable && value != null) IconButton(onClick = { onValueChange(null) }) {
+                Icon(Icons.Default.Clear, contentDescription = "Quitar fecha")
+            }
+        },
+        isError = isError,
+        supportingText = supportingText?.let { { Text(it) } },
+        interactionSource = interaction,
+        singleLine = true,
+        modifier = modifier.fillMaxWidth(),
+    )
+    if (show) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = value?.let(::epochDayToMillis))
+        DatePickerDialog(
+            onDismissRequest = { show = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { onValueChange(millisToEpochDay(it)) }
+                    show = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = { TextButton(onClick = { show = false }) { Text("Cancelar") } },
+        ) { DatePicker(state = state) }
+    }
+}
