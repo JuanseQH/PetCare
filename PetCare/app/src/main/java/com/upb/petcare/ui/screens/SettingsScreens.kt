@@ -279,10 +279,10 @@ private fun ItemRow(
     }
 }
 
-// ---------------------------------------------------------------- Créditos
+// ================================================================= Créditos
 
 /**
- * >>> EDITA AQUÍ LOS DATOS DEL ESTUDIANTE <<<
+ * >>> DATOS DEL ESTUDIANTE <<<
  * Esta información aparece en la pantalla de Créditos.
  */
 object StudentInfo {
@@ -299,57 +299,68 @@ object StudentInfo {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreditsScreen(onBack: () -> Unit) {
-    Scaffold(topBar = { PetTopBar("Créditos", onBack = onBack) }) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(Icons.Default.Pets, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
-            Text("PetCare", style = MaterialTheme.typography.headlineMedium)
-            Text(
-                "Aplicación nativa para llevar el control de vacunación y desparasitación de tus mascotas, " +
-                    "con alertas de próximas dosis.",
-                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.School, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Desarrollado por", style = MaterialTheme.typography.titleMedium)
+    StatusBarIcons(darkIcons = false)
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState())) {
+        Box {
+            BrandHeader(Modifier.fillMaxWidth().height(290.dp), bottomRadius = 44.dp) {
+                Column(Modifier.fillMaxSize().statusBarsPadding().padding(bottom = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Box(Modifier.size(84.dp).background(Color.White, RoundedCornerShape(28.dp)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Pets, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(46.dp))
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                    Text(StudentInfo.NAME, style = MaterialTheme.typography.titleLarge)
-                    Text(StudentInfo.STUDENT_ID, style = MaterialTheme.typography.bodyMedium)
-                    Text(StudentInfo.EMAIL, style = MaterialTheme.typography.bodyMedium)
-                    Text(StudentInfo.PROGRAM, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(4.dp))
-                    Text("${StudentInfo.COURSE} · ${StudentInfo.UNIVERSITY}", style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium)
-                    Text("${StudentInfo.DELIVERY} · ${StudentInfo.YEAR}", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(12.dp))
+                    Text("PetCare", style = MaterialTheme.typography.headlineLarge, color = Color.White)
+                    Text("Versión 2.0.0", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
                 }
             }
-
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.statusBarsPadding().padding(12.dp)) {
+                CircleIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Volver", onBack,
+                    Color.White.copy(alpha = 0.2f), Color.White)
+            }
+        }
+        Column(Modifier.padding(20.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                "Aplicación nativa para llevar el carné de vacunación de tus mascotas, con alertas, recordatorios, " +
+                    "control de peso y exportación a PDF.",
+                style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(),
+            )
+            SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Code, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Tecnologías", style = MaterialTheme.typography.titleMedium)
+                        IconBadge(Icons.Rounded.School, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, 40.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Desarrollado por", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("Kotlin", "Jetpack Compose", "Material 3", "Room (SQLite)", "DataStore",
-                            "Navigation Compose", "ViewModel + Flow", "Android Studio").forEach {
-                            AssistChip(onClick = {}, label = { Text(it) })
+                    Spacer(Modifier.height(6.dp))
+                    Text(StudentInfo.NAME, style = MaterialTheme.typography.headlineSmall)
+                    Text(StudentInfo.STUDENT_ID, style = MaterialTheme.typography.bodyLarge)
+                    Text(StudentInfo.EMAIL, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(StudentInfo.PROGRAM, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                    Text("${StudentInfo.COURSE} · ${StudentInfo.UNIVERSITY}", style = MaterialTheme.typography.titleSmall)
+                    Text("${StudentInfo.DELIVERY} · ${StudentInfo.YEAR}", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Tecnologías", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Kotlin", "Jetpack Compose", "Material 3", "Room", "DataStore", "Navigation",
+                            "WorkManager", "Coil", "PdfDocument", "SplashScreen").forEachIndexed { i, t ->
+                            val c = PetPalette[i % PetPalette.size]
+                            Text(t, style = MaterialTheme.typography.labelLarge, color = c,
+                                modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.14f))
+                                    .padding(horizontal = 12.dp, vertical = 7.dp))
                         }
                     }
                 }
             }
-            Text("Íconos: Material Symbols (Google) · Emojis del sistema", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Tipografías Fredoka y Nunito (SIL Open Font License) · Íconos Material Symbols",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
     }
 }
+
